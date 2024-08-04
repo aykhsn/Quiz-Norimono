@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #ffffff;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        const carTypes = [
+            'ambulance', 'patrol_car', 'shovel_car', 'taxi', 'bus', 'truck', 'dump_truck', 
+            'fire_truck-ladder', 'fire_truck-pump', 'crane_truck', 'forklift_truck', 'mixer_truck', 
+            'cleaning_truck', 'car_carrier', 'mail_truck', 'bulldozer'
+        ];
+
+        class StartScene extends Phaser.Scene {
+            constructor() {
+                super({ key: 'StartScene' });
+            }
+
+            preload() {
+                preloadAssets(this);
+            }
+
+            create() {
+                const startButton = this.add.text(this.scale.width / 2, this.scale.height / 2, 'スタート', { fontSize: '64px', fill: '#000' })
+                    .setOrigin(0.5)
+                    .setInteractive();
+                startButton.on('pointerdown', () => {
+                    this.sound.play('start');
+                    this.scene.start('QuizScene');
+                });
+            }
+        }
+
+        class QuizScene extends Phaser.Scene {
+            constructor() {
+                super({ key: 'QuizScene' });
+                this.currentQuestion = 0;
+                this.correctAnswers = 0;
+                this.usedCars = [];
+                this.wrongAttempts = 0;
+            }
+
+            init() {
+                this.currentQuestion = 0;
+                this.correctAnswers = 0;
+                this.usedCars = [];
+                this.wrongAttempts = 0;
+            }
+
+            create() {
+                this.questions = this.createQuestions();
+                this.showQuestion();
+            }
+
+            createQuestions() {
+                const questions = [];
+                let availableCars = carTypes.slice();
+                for (let i = 0; i < 5; i++) {
+                    const correctCar = Phaser.Utils.Array.RemoveRandomElement(availableCars);
+                    const options = Phaser.Utils.Array.Shuffle([correctCar, ...Phaser.Utils.Array.Shuffle(availableCars).slice(0, 2)]);
+                    questions.push({ correctCar, options });
+                    this.usedCars.push(correctCar);
+                    availableCars = availableCars.filter(car => !this.usedCars.includes(car));
+                }
+                return questions;
+            }
+
+            showQuestion() {
+                if (this.currentQuestion >= this.questions.length) {
+                    this.scene.start('ResultScene', { correctAnswers: this.correctAnswers });
+                    return;
+                }
+                const { correctCar, options } = this.questions[this.currentQuestion];
+                this.wrongAttempts = 0; // Reset wrong attempts counter
+                this.sound.play('quiz');
+                this.time.delayedCall(1000, () => {
+                    this.sound.play(correctCar);
+                });
+
+                const positions = this.getUniquePositions(3, this.scale.width, this.scale.height);
+
+                this.currentImages = [];
+                options.forEach((car, index) => {
+                    const carImage = this.add.image(positions[index].x, positions[index].y, car)
+                        .setInteractive()
+                        .setScale(0.5);
+                    carImage.on('pointerdown', () => {
+                        if (car === correctCar) {
+                            this.sound.play('correct');
+                            this.correctAnswers++;
+                            this.currentQuestion++;
+                            this.clearOptions();
+                            this.showQuestion();
+                        } else {
+                            this.wrongAttempts++;
+                            if (this.wrongAttempts >= 3) {
+                                this.currentQuestion++;
+                                this.clearOptions();
+                                this.showQuestion();
+                            } else {
+                                this.sound.play('try_again');
+                                this.time.delayedCall(1000, () => {
+                                    this.sound.play(correctCar);
+                                });
+                            }
+                        }
+                    });
+                    this.currentImages.push(carImage);
+                });
+            }
+
+            clearOptions() {
+                this.currentImages.forEach(image => image.destroy());
+                this.currentImages = [];
+            }
+
+            getUniquePositions(count, width, height) {
+                const positions = [];
+                const stepY = height / 3;
+                const x = width / 2;
+
+                for (let i = 0; i < count; i++) {
+                    positions.push({ x: x, y: stepY / 2 + i * stepY });
+                }
+
+                return positions;
+            }
+        }
+
+        class ResultScene extends Phaser.Scene {
+            constructor() {
+                super({ key: 'ResultScene' });
+            }
+
+            init(data) {
+                this.correctAnswers = data.correctAnswers;
+            }
+
+            create() {
+                this.sound.play('result');
+                this.time.delayedCall(1000, () => {
+                    this.sound.play('great');
+                });
+                this.add.text(this.scale.width / 2, this.scale.height / 2, `${this.correctAnswers}問正解したよ！`, { fontSize: '64px', fill: '#000' })
+                    .setOrigin(0.5);
+                this.add.text(this.scale.width / 2, this.scale.height / 2 + 100, '頑張ったね', { fontSize: '64px', fill: '#000' })
+                    .setOrigin(0.5);
+
+                const retryButton = this.add.text(this.scale.width / 2, this.scale.height / 2 + 200, 'リトライ', { fontSize: '64px', fill: '#000' })
+                    .setOrigin(0.5)
+                    .setInteractive();
+                retryButton.on('pointerdown', () => {
+                    this.scene.start('QuizScene');
+                });
+            }
+        }
+
+        function preloadAssets(scene) {
+            carTypes.forEach(car => {
+                scene.load.image(car, `assets/${car}.png`);
+            });
+            scene.load.audio('start', 'assets/voice-quiz-norimono.mp3');
+            scene.load.audio('quiz', 'assets/quiz-jajan.mp3');
+            carTypes.forEach(car => {
+                scene.load.audio(car, `assets/voice-${car}.mp3`);
+            });
+            scene.load.audio('correct', 'assets/quiz-pinpon.mp3');
+            scene.load.audio('try_again', 'assets/quiz-bu.mp3');
+            scene.load.audio('result', 'assets/chiroriro.mp3');
+            scene.load.audio('great', 'assets/voice-seikai.mp3');
+        }
+
+        const config = {
+            type: Phaser.AUTO,
+            width: window.innerWidth,
+            height: window.innerHeight,
+            backgroundColor: '#ffffff',
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH
+            },
+            scene: [StartScene, QuizScene, ResultScene]
+        };
+
+        const game = new Phaser.Game(config);
+
+        window.addEventListener('resize', () => {
+            game.scale.resize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
