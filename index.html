@@ -164,7 +164,13 @@
                             this.time.delayedCall(1000, () => {
                                 this.sounds.seikai = this.sound.add('seikai');
                                 if (this.sounds.seikai) {
-                                    this.sounds.seikai.play();
+                                    const praiseSounds = ['voice-sugoi', 'voice-yattane', 'voice-omigoto'];
+                                    const randomPraise = Phaser.Utils.Array.GetRandom(praiseSounds);
+                                    this.sound.play(randomPraise);
+                                    
+                                    this.time.delayedCall(1000, () => {
+                                        this.sounds.seikai.play();
+                                    });
                                 }
                             });
 
@@ -201,20 +207,20 @@
                             });
 
                             if (this.currentQuestion < this.questions.length) {
-                                this.time.delayedCall(3000, () => {
+                                this.time.delayedCall(4000, () => {
                                     this.sounds.next = this.sound.add('next');
                                     if (this.sounds.next) {
                                         this.sounds.next.play();
                                     }
                                 });
-                                this.time.delayedCall(4400, () => {
+                                this.time.delayedCall(5400, () => {
                                     this.clearOptions();
                                     circle.destroy();
                                     this.showQuestion();
                                     this.input.enabled = true;
                                 });
                             } else {
-                                this.time.delayedCall(2000, () => {
+                                this.time.delayedCall(4000, () => {
                                     this.clearOptions();
                                     circle.destroy();
                                     this.showQuestion();
@@ -331,6 +337,7 @@
             preload() {
                 this.load.image('button-retry', 'assets/button-retry.png');
                 this.load.audio('tettere', 'assets/tettere.mp3');
+                this.load.audio('voice-mataasobinikitene', 'assets/voice-mataasobinikitene.mp3');
                 this.load.audio('voice-seikaishitane-0', 'assets/voice-seikaishitane-0.mp3');
                 this.load.audio('voice-seikaishitane-1', 'assets/voice-seikaishitane-1.mp3');
                 this.load.audio('voice-seikaishitane-2', 'assets/voice-seikaishitane-2.mp3');
@@ -357,6 +364,11 @@
                 this.time.delayedCall(2000, () => {
                     this.sound.play(voiceFile);
                 });
+                if(this.correctAnswers > 0) {
+                    this.time.delayedCall(4800, () => {
+                        this.sound.play('voice-mataasobinikitene');
+                    });
+                }
 
                 const retryButton = this.add.image(this.scale.width / 2, this.scale.height / 2, 'button-retry')
                     .setDisplaySize(buttonWidth, buttonWidth / 2)
@@ -386,6 +398,9 @@
             });
             scene.load.audio('correct', 'assets/quiz-pinpon.mp3');
             scene.load.audio('seikai', 'assets/voice-seikai.mp3');
+            scene.load.audio('voice-sugoi', 'assets/voice-sugoi.mp3');
+            scene.load.audio('voice-yattane', 'assets/voice-yattane.mp3');
+            scene.load.audio('voice-omigoto', 'assets/voice-omigoto.mp3');
             scene.load.audio('try_again', 'assets/quiz-bu.mp3');
             scene.load.audio('chigauyo', 'assets/voice-chigauyo.mp3');
             scene.load.audio('result', 'assets/chiroriro.mp3');
