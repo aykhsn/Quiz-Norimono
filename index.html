@@ -38,8 +38,11 @@
                     .setOrigin(0.5)
                     .setInteractive();
                 startButton.on('pointerdown', () => {
-                    this.sound.play('start');
-                    this.scene.start('QuizScene');
+                    this.sound.play('click');
+                    this.time.delayedCall(500, () => {
+                        this.sound.play('start');
+                        this.scene.start('QuizScene');
+                    });
                 });
             }
         }
@@ -51,6 +54,8 @@
                 this.correctAnswers = 0;
                 this.usedCars = [];
                 this.wrongAttempts = 0;
+                this.timers = [];
+                this.sounds = {};
             }
 
             init() {
@@ -58,6 +63,8 @@
                 this.correctAnswers = 0;
                 this.usedCars = [];
                 this.wrongAttempts = 0;
+                this.clearTimers();
+                this.stopAllSounds();
             }
 
             create() {
@@ -85,25 +92,85 @@
                 }
                 const { correctCar, options } = this.questions[this.currentQuestion];
                 this.wrongAttempts = 0; // Reset wrong attempts counter
-                this.sound.play('quiz');
-                this.time.delayedCall(1000, () => {
-                    this.sound.play(correctCar);
-                });
+                this.clearTimers();
+                this.stopAllSounds();
+
+                let delayTime = 0;
+                if (this.currentQuestion === 0) {
+                    delayTime = 2200;
+                }
+
+                this.timers.push(this.time.delayedCall(delayTime, () => {
+                    this.sounds.quiz = this.sound.add('quiz');
+                    if (this.sounds.quiz) {
+                        this.sounds.quiz.play();
+                    }
+                }));
+                this.timers.push(this.time.delayedCall(delayTime + 800, () => {
+                    this.sounds.correctCar = this.sound.add(correctCar);
+                    if (this.sounds.correctCar) {
+                        this.sounds.correctCar.play();
+                    }
+                }));
+
+                this.sounds.bgmSound = this.sound.add('bgm');
+                this.timers.push(this.time.delayedCall(delayTime + 2500, () => {
+                    if (this.sounds.bgmSound) {
+                        this.sounds.bgmSound.play();
+                    }
+                }));
 
                 const positions = this.getUniquePositions(3, this.scale.width, this.scale.height);
 
                 this.currentImages = [];
                 options.forEach((car, index) => {
                     const carImage = this.add.image(positions[index].x, positions[index].y, car)
-                        .setInteractive()
-                        .setScale(0.5);
+                        .setInteractive();
+                    
+                    // 横長か縦長かに応じてスケールを設定
+                    if (this.scale.width > this.scale.height) {
+                        carImage.setScale(Math.min(1, (this.scale.width / 3 - 40) / carImage.width));
+                    } else {
+                        carImage.setScale(Math.min(1, (this.scale.width - 80) / carImage.width));
+                    }
+
                     carImage.on('pointerdown', () => {
+                        this.clearTimers();
+                        this.stopAllSounds();
+
                         if (car === correctCar) {
-                            this.sound.play('correct');
+                            this.sounds.correct = this.sound.add('correct');
+                            if (this.sounds.correct) {
+                                this.sounds.correct.play();
+                            }
                             this.correctAnswers++;
                             this.currentQuestion++;
-                            this.clearOptions();
-                            this.showQuestion();
+                            this.time.delayedCall(1000, () => {
+                                this.sounds.seikai = this.sound.add('seikai');
+                                if (this.sounds.seikai) {
+                                    this.sounds.seikai.play();
+                                }
+                            });
+                            
+                            if (this.currentQuestion < this.questions.length) {
+                                this.time.delayedCall(2000, () => {
+                                    this.sounds.next = this.sound.add('next');
+                                    if (this.sounds.next) {
+                                        this.sounds.next.play();
+                                    }
+                                });
+                                this.time.delayedCall(3400, () => {
+                                    this.clearOptions();
+                                    this.showQuestion();
+                                });
+                            } else {
+                                this.time.delayedCall(2000, () => {
+                                    this.clearOptions();
+                                    this.showQuestion();
+                                });
+                            }
+
+                            
                         } else {
                             this.wrongAttempts++;
                             if (this.wrongAttempts >= 3) {
@@ -111,9 +178,20 @@
                                 this.clearOptions();
                                 this.showQuestion();
                             } else {
-                                this.sound.play('try_again');
+                                this.sounds.tryAgain = this.sound.add('try_again');
+                                if (this.sounds.tryAgain) {
+                                    this.sounds.tryAgain.play();
+                                }
                                 this.time.delayedCall(1000, () => {
-                                    this.sound.play(correctCar);
+                                    this.sounds.correctCar = this.sound.add(correctCar);
+                                    if (this.sounds.correctCar) {
+                                        this.sounds.correctCar.play();
+                                    }
+                                });
+                                this.time.delayedCall(2500, () => {
+                                    if (this.sounds.bgmSound) {
+                                        this.sounds.bgmSound.play();
+                                    }
                                 });
                             }
                         }
@@ -127,15 +205,38 @@
                 this.currentImages = [];
             }
 
+            clearTimers() {
+                this.timers.forEach(timer => timer.remove(false));
+                this.timers = [];
+            }
+
+            stopAllSounds() {
+                Object.keys(this.sounds).forEach(key => {
+                    if (this.sounds[key] && this.sounds[key].isPlaying) {
+                        this.sounds[key].stop();
+                    }
+                });
+                this.sounds = {};
+            }
+
             getUniquePositions(count, width, height) {
                 const positions = [];
-                const stepY = height / 3;
-                const x = width / 2;
-
-                for (let i = 0; i < count; i++) {
-                    positions.push({ x: x, y: stepY / 2 + i * stepY });
+                const padding = 40;
+                if (width > height) {
+                    // 横長の場合は横に三等分
+                    const stepX = (width - 2 * padding) / 3;
+                    const y = height / 2;
+                    for (let i = 0; i < count; i++) {
+                        positions.push({ x: padding + stepX / 2 + i * stepX, y: y });
+                    }
+                } else {
+                    // 縦長の場合は縦に三等分
+                    const stepY = (height - 2 * padding) / 3;
+                    const x = width / 2;
+                    for (let i = 0; i < count; i++) {
+                        positions.push({ x: x, y: padding + stepY / 2 + i * stepY });
+                    }
                 }
-
                 return positions;
             }
         }
@@ -173,14 +274,18 @@
                 scene.load.image(car, `assets/${car}.png`);
             });
             scene.load.audio('start', 'assets/voice-quiz-norimono.mp3');
+            scene.load.audio('next', 'assets/voice-tsuginomondai.mp3');
+            scene.load.audio('click', 'assets/chiroriro.mp3');
             scene.load.audio('quiz', 'assets/quiz-jajan.mp3');
+            scene.load.audio('bgm', 'assets/Let’s_cooking.mp3');
             carTypes.forEach(car => {
                 scene.load.audio(car, `assets/voice-${car}.mp3`);
             });
             scene.load.audio('correct', 'assets/quiz-pinpon.mp3');
+            scene.load.audio('seikai', 'assets/voice-seikai.mp3');
             scene.load.audio('try_again', 'assets/quiz-bu.mp3');
             scene.load.audio('result', 'assets/chiroriro.mp3');
-            scene.load.audio('great', 'assets/voice-seikai.mp3');
+            scene.load.audio('great', 'assets/voice-yokudekimashita.mp3');
         }
 
         const config = {
