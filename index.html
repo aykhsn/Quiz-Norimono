@@ -11,7 +11,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #ffffff;
+            background-color: #c1e5c4;
             overflow: hidden;
         }
     </style>
@@ -122,7 +122,7 @@
                     }
                 }));
 
-                this.sounds.bgmSound = this.sound.add('bgm');
+                this.sounds.bgmSound = this.sound.add('bgm', { loop: true });
                 this.timers.push(this.time.delayedCall(delayTime + 2500, () => {
                     if (this.sounds.bgmSound) {
                         this.sounds.bgmSound.play();
@@ -135,7 +135,7 @@
                 options.forEach((car, index) => {
                     const carImage = this.add.image(positions[index].x, positions[index].y, car)
                         .setInteractive();
-                    
+
                     // 横長か縦長かに応じてスケールを設定
                     if (this.scale.width > this.scale.height) {
                         carImage.setScale(Math.min(1, (this.scale.width / 3 - 40) / carImage.width));
@@ -150,9 +150,9 @@
 
                         // Disable all inputs
                         this.input.enabled = false;
-                        
+
                         this.clearTimers();
-                        this.stopAllSounds();                     
+                        this.stopAllSounds();
 
                         if (car === correctCar) {
                             this.sounds.correct = this.sound.add('correct');
@@ -167,7 +167,31 @@
                                     this.sounds.seikai.play();
                                 }
                             });
-                            
+
+                            // 正解の車を中央に移動
+                            this.tweens.add({
+                                targets: carImage,
+                                x: this.scale.width / 2,
+                                y: this.scale.height / 2,
+                                duration: 1000,
+                                ease: 'Power2'
+                            });
+
+                            // その他の車をフェードアウト
+                            this.currentImages.forEach(image => {
+                                if (image !== carImage) {
+                                    this.tweens.add({
+                                        targets: image,
+                                        alpha: 0,
+                                        duration: 1000,
+                                        ease: 'Power2',
+                                        onComplete: () => {
+                                            image.destroy();
+                                        }
+                                    });
+                                }
+                            });
+
                             if (this.currentQuestion < this.questions.length) {
                                 this.time.delayedCall(3000, () => {
                                     this.sounds.next = this.sound.add('next');
@@ -188,7 +212,7 @@
                                 });
                             }
 
-                            
+
                         } else {
                             this.wrongAttempts++;
                             if (this.wrongAttempts >= 3) {
@@ -215,7 +239,6 @@
                                     }
                                 });
                                 this.time.delayedCall(4200, () => {
-                                    this.sounds.bgmSound = this.sound.add('bgm');
                                     if (this.sounds.bgmSound) {
                                         this.sounds.bgmSound.play();
                                     }
@@ -243,6 +266,10 @@
                     if (this.sounds[key] && this.sounds[key].isPlaying) {
                         this.sounds[key].stop();
                     }
+                }
+                // 確実にbgmSoundも停止させる
+                if (this.sounds.bgmSound && this.sounds.bgmSound.isPlaying) {
+                    this.sounds.bgmSound.stop();
                 }
             }
 
@@ -291,6 +318,7 @@
                     .setOrigin(0.5)
                     .setInteractive();
                 retryButton.on('pointerdown', () => {
+                    this.sound.play('retry');
                     if (this.sound.context.state === 'suspended') {
                         this.sound.context.resume();
                     }
@@ -317,13 +345,14 @@
             scene.load.audio('chigauyo', 'assets/voice-chigauyo.mp3');
             scene.load.audio('result', 'assets/chiroriro.mp3');
             scene.load.audio('great', 'assets/voice-yokudekimashita.mp3');
+            scene.load.audio('retry', 'assets/voice-mouichido.mp3');
         }
 
         const config = {
             type: Phaser.AUTO,
             width: window.innerWidth,
             height: window.innerHeight,
-            backgroundColor: '#ffffff',
+            backgroundColor: '#c1e5c4',
             scale: {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH
