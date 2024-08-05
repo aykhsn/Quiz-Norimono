@@ -30,12 +30,14 @@
             }
 
             preload() {
+                this.load.image('button-start', 'assets/button-start.png');
                 preloadAssets(this);
             }
 
             create() {
-                const startButton = this.add.text(this.scale.width / 2, this.scale.height / 2, 'スタート', { fontSize: '64px', fill: '#000' })
-                    .setOrigin(0.5)
+                const buttonWidth = Math.min(this.scale.width - 80, 400);
+                const startButton = this.add.image(this.scale.width / 2, this.scale.height / 2, 'button-start')
+                    .setDisplaySize(buttonWidth, buttonWidth / 2) // Adjust the height as needed
                     .setInteractive();
                 startButton.on('pointerdown', () => {
                     if (this.sound.context.state === 'suspended') {
@@ -251,13 +253,14 @@
                                     this.sounds.correctCar = this.sound.add(correctCar);
                                     if (this.sounds.correctCar) {
                                         this.sounds.correctCar.play();
+                                        // Enable inputs after the delay
+                                        this.input.enabled = true;
                                     }
                                 });
                                 this.time.delayedCall(4200, () => {
                                     if (this.sounds.bgmSound) {
                                         this.sounds.bgmSound.play();
                                     }
-                                    this.input.enabled = true;
                                 });
                             }
                         }
@@ -319,18 +322,19 @@
                 this.correctAnswers = data.correctAnswers;
             }
 
+            preload() {
+                this.load.image('button-retry', 'assets/button-retry.png');
+            }
+
             create() {
+                const buttonWidth = Math.min(this.scale.width - 80, 400);
                 this.sound.play('result');
                 this.time.delayedCall(1000, () => {
                     this.sound.play('great');
                 });
-                this.add.text(this.scale.width / 2, this.scale.height / 2, `${this.correctAnswers}問正解したよ！`, { fontSize: '64px', fill: '#000' })
-                    .setOrigin(0.5);
-                this.add.text(this.scale.width / 2, this.scale.height / 2 + 100, '頑張ったね', { fontSize: '64px', fill: '#000' })
-                    .setOrigin(0.5);
 
-                const retryButton = this.add.text(this.scale.width / 2, this.scale.height / 2 + 200, 'リトライ', { fontSize: '64px', fill: '#000' })
-                    .setOrigin(0.5)
+                const retryButton = this.add.image(this.scale.width / 2, this.scale.height / 2, 'button-retry')
+                    .setDisplaySize(buttonWidth, buttonWidth / 2) // Adjust the height as needed
                     .setInteractive();
                 retryButton.on('pointerdown', () => {
                     this.sound.play('retry');
