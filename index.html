@@ -11,7 +11,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #c1e5c4;
+            background-color: #A1CBC4;
             overflow: hidden;
         }
     </style>
@@ -61,6 +61,7 @@
                 this.wrongAttempts = 0;
                 this.timers = [];
                 this.sounds = {};
+                this.correctCars = [];
                 this.clickCooldown = false;
             }
 
@@ -69,6 +70,7 @@
                 this.correctAnswers = 0;
                 this.usedCars = [];
                 this.wrongAttempts = 0;
+                this.correctCars = [];
                 this.clearTimers();
                 this.stopAllSounds();
             }
@@ -81,7 +83,7 @@
             createQuestions() {
                 const questions = [];
                 let availableCars = carTypes.slice();
-                for (let i = 0; i < 5; i++) {
+                for (let i = 0; i < 6; i++) { // 6問に変更
                     const correctCar = Phaser.Utils.Array.RemoveRandomElement(availableCars);
                     const options = Phaser.Utils.Array.Shuffle([correctCar, ...Phaser.Utils.Array.Shuffle(availableCars).slice(0, 2)]);
                     questions.push({ correctCar, options });
@@ -93,7 +95,7 @@
 
             showQuestion() {
                 if (this.currentQuestion >= this.questions.length) {
-                    this.scene.start('ResultScene', { correctAnswers: this.correctAnswers });
+                    this.scene.start('ResultScene', { correctAnswers: this.correctAnswers, correctCars: this.correctCars });
                     return;
                 }
                 const { correctCar, options } = this.questions[this.currentQuestion];
@@ -161,6 +163,8 @@
                             }
                             this.correctAnswers++;
                             this.currentQuestion++;
+                            this.correctCars.push(correctCar); // Store the correct car
+
                             this.time.delayedCall(1000, () => {
                                 this.sounds.seikai = this.sound.add('seikai');
                                 if (this.sounds.seikai) {
@@ -196,8 +200,7 @@
                                 }
                             });
 
-                            const circle = this.add.circle(this.scale.width / 2, this.scale.height / 2, 0, 0xffffff)
-                                .setAlpha(0.5)
+                            const circle = this.add.circle(this.scale.width / 2, this.scale.height / 2, 0, 0xE7CAD6)
                                 .setDepth(-1);
                             this.tweens.add({
                                 targets: circle,
@@ -332,6 +335,7 @@
 
             init(data) {
                 this.correctAnswers = data.correctAnswers;
+                this.correctCars = data.correctCars;
             }
 
             preload() {
@@ -343,6 +347,7 @@
                 this.load.audio('voice-seikaishitane-2', 'assets/voice-seikaishitane-2.mp3');
                 this.load.audio('voice-seikaishitane-3', 'assets/voice-seikaishitane-3.mp3');
                 this.load.audio('voice-seikaishitane-4', 'assets/voice-seikaishitane-4.mp3');
+                this.load.audio('voice-seikaishitane-5', 'assets/voice-seikaishitane-5.mp3');
                 this.load.audio('voice-seikaishitane-all', 'assets/voice-seikaishitane-all.mp3');
             }
 
@@ -355,12 +360,13 @@
                     'voice-seikaishitane-2',
                     'voice-seikaishitane-3',
                     'voice-seikaishitane-4',
+                    'voice-seikaishitane-5',
                     'voice-seikaishitane-all'
                 ];
 
                 this.sound.play('tettere');
 
-                const voiceFile = this.correctAnswers >= 5 ? voiceFiles[5] : voiceFiles[this.correctAnswers];
+                const voiceFile = this.correctAnswers >= 6 ? voiceFiles[6] : voiceFiles[this.correctAnswers];
                 this.time.delayedCall(2000, () => {
                     this.sound.play(voiceFile);
                 });
@@ -381,6 +387,29 @@
                     this.sound.play('click');
                     this.scene.start('QuizScene');
                 });
+
+                // Display correct cars above and below the retry button
+                this.displayCorrectCars(buttonWidth);
+            }
+
+            displayCorrectCars(buttonWidth) {
+                const carSize = buttonWidth / 3; // クイズの画像の3分の1のサイズ
+                const startX = this.scale.width / 2 - carSize;
+                const carYAbove = this.scale.height / 4;
+                const carYBelow = this.scale.height * 3 / 4;
+
+                for (let i = 0; i < this.correctCars.length; i++) {
+                    const carImage = this.add.image(startX + (i % 3) * carSize, i < 3 ? carYAbove : carYBelow, this.correctCars[i])
+                        .setDisplaySize(carSize, carSize * 5 / 8)
+                        .setAlpha(0);
+
+                    this.tweens.add({
+                        targets: carImage,
+                        alpha: 1,
+                        duration: 1000,
+                        delay: 100 * i
+                    });
+                }
             }
         }
 
@@ -404,7 +433,6 @@
             scene.load.audio('try_again', 'assets/quiz-bu.mp3');
             scene.load.audio('chigauyo', 'assets/voice-chigauyo.mp3');
             scene.load.audio('result', 'assets/chiroriro.mp3');
-            scene.load.audio('great', 'assets/voice-yokudekimashita.mp3');
             scene.load.audio('retry', 'assets/voice-mouichido.mp3');
         }
 
@@ -412,7 +440,7 @@
             type: Phaser.AUTO,
             width: window.innerWidth,
             height: window.innerHeight,
-            backgroundColor: '#c1e5c4',
+            backgroundColor: '#A1CBC4',
             scale: {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH
