@@ -139,8 +139,10 @@
                     // 横長か縦長かに応じてスケールを設定
                     if (this.scale.width > this.scale.height) {
                         carImage.setScale(Math.min(1, (this.scale.width / 3 - 40) / carImage.width));
+                    } else if (this.scale.width * 5 / 8 > this.scale.height / 3) {
+                        carImage.setScale(Math.min(1, ((this.scale.height / 3) - 40) / carImage.height));
                     } else {
-                        carImage.setScale(Math.min(1, (this.scale.width - 80) / carImage.width));
+                        carImage.setScale(Math.min(1, ((this.scale.width) - 80) / carImage.width));
                     }
 
                     carImage.on('pointerdown', () => {
