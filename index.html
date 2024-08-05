@@ -38,6 +38,9 @@
                     .setOrigin(0.5)
                     .setInteractive();
                 startButton.on('pointerdown', () => {
+                    if (this.sound.context.state === 'suspended') {
+                        this.sound.context.resume();
+                    }
                     this.sound.play('click');
                     this.time.delayedCall(500, () => {
                         this.sound.play('start');
@@ -56,6 +59,7 @@
                 this.wrongAttempts = 0;
                 this.timers = [];
                 this.sounds = {};
+                this.clickCooldown = false; // Cooldown flag for debouncing
             }
 
             init() {
@@ -95,6 +99,9 @@
                 this.clearTimers();
                 this.stopAllSounds();
 
+                // Disable all inputs
+                this.input.enabled = false;
+
                 let delayTime = 0;
                 if (this.currentQuestion === 0) {
                     delayTime = 2200;
@@ -110,6 +117,8 @@
                     this.sounds.correctCar = this.sound.add(correctCar);
                     if (this.sounds.correctCar) {
                         this.sounds.correctCar.play();
+                        // Enable inputs after the delay
+                        this.input.enabled = true;
                     }
                 }));
 
@@ -135,8 +144,15 @@
                     }
 
                     carImage.on('pointerdown', () => {
+                        if (this.clickCooldown) return; // Ignore clicks during cooldown
+                        this.clickCooldown = true;
+                        this.time.delayedCall(500, () => { this.clickCooldown = false; }); // Reset cooldown after 500ms
+
+                        // Disable all inputs
+                        this.input.enabled = false;
+                        
                         this.clearTimers();
-                        this.stopAllSounds();
+                        this.stopAllSounds();                     
 
                         if (car === correctCar) {
                             this.sounds.correct = this.sound.add('correct');
@@ -153,20 +169,22 @@
                             });
                             
                             if (this.currentQuestion < this.questions.length) {
-                                this.time.delayedCall(2000, () => {
+                                this.time.delayedCall(3000, () => {
                                     this.sounds.next = this.sound.add('next');
                                     if (this.sounds.next) {
                                         this.sounds.next.play();
                                     }
                                 });
-                                this.time.delayedCall(3400, () => {
+                                this.time.delayedCall(4400, () => {
                                     this.clearOptions();
                                     this.showQuestion();
+                                    this.input.enabled = true;
                                 });
                             } else {
                                 this.time.delayedCall(2000, () => {
                                     this.clearOptions();
                                     this.showQuestion();
+                                    this.input.enabled = true;
                                 });
                             }
 
@@ -177,21 +195,31 @@
                                 this.currentQuestion++;
                                 this.clearOptions();
                                 this.showQuestion();
+                                this.input.enabled = true;
                             } else {
                                 this.sounds.tryAgain = this.sound.add('try_again');
                                 if (this.sounds.tryAgain) {
                                     this.sounds.tryAgain.play();
                                 }
+
+                                this.sounds.chigauyo = this.sound.add('chigauyo');
                                 this.time.delayedCall(1000, () => {
+                                    if (this.sounds.chigauyo) {
+                                        this.sounds.chigauyo.play();
+                                    }
+                                });
+                                this.time.delayedCall(2700, () => {
                                     this.sounds.correctCar = this.sound.add(correctCar);
                                     if (this.sounds.correctCar) {
                                         this.sounds.correctCar.play();
                                     }
                                 });
-                                this.time.delayedCall(2500, () => {
+                                this.time.delayedCall(4200, () => {
+                                    this.sounds.bgmSound = this.sound.add('bgm');
                                     if (this.sounds.bgmSound) {
                                         this.sounds.bgmSound.play();
                                     }
+                                    this.input.enabled = true;
                                 });
                             }
                         }
@@ -211,12 +239,11 @@
             }
 
             stopAllSounds() {
-                Object.keys(this.sounds).forEach(key => {
+                for (let key in this.sounds) {
                     if (this.sounds[key] && this.sounds[key].isPlaying) {
                         this.sounds[key].stop();
                     }
-                });
-                this.sounds = {};
+                }
             }
 
             getUniquePositions(count, width, height) {
@@ -264,6 +291,9 @@
                     .setOrigin(0.5)
                     .setInteractive();
                 retryButton.on('pointerdown', () => {
+                    if (this.sound.context.state === 'suspended') {
+                        this.sound.context.resume();
+                    }
                     this.scene.start('QuizScene');
                 });
             }
@@ -284,6 +314,7 @@
             scene.load.audio('correct', 'assets/quiz-pinpon.mp3');
             scene.load.audio('seikai', 'assets/voice-seikai.mp3');
             scene.load.audio('try_again', 'assets/quiz-bu.mp3');
+            scene.load.audio('chigauyo', 'assets/voice-chigauyo.mp3');
             scene.load.audio('result', 'assets/chiroriro.mp3');
             scene.load.audio('great', 'assets/voice-yokudekimashita.mp3');
         }
