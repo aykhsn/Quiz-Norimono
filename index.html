@@ -18,7 +18,7 @@
 </head>
 <body>
     <script>
-        const carTypes = [
+        const itemTypes = [
             'ambulance', 'patrol_car', 'shovel_car', 'taxi', 'bus', 'truck', 'dump_truck', 
             'fire_truck-ladder', 'fire_truck-pump', 'crane_truck', 'forklift_truck', 'mixer_truck', 
             'cleaning_truck', 'car_carrier', 'mail_truck', 'bulldozer'
@@ -57,20 +57,20 @@
                 super({ key: 'QuizScene' });
                 this.currentQuestion = 0;
                 this.correctAnswers = 0;
-                this.usedCars = [];
+                this.usedItems = [];
                 this.wrongAttempts = 0;
                 this.timers = [];
                 this.sounds = {};
-                this.correctCars = [];
+                this.correctItems = [];
                 this.clickCooldown = false;
             }
 
             init() {
                 this.currentQuestion = 0;
                 this.correctAnswers = 0;
-                this.usedCars = [];
+                this.usedItems = [];
                 this.wrongAttempts = 0;
-                this.correctCars = [];
+                this.correctItems = [];
                 this.clearTimers();
                 this.stopAllSounds();
             }
@@ -82,23 +82,23 @@
 
             createQuestions() {
                 const questions = [];
-                let availableCars = carTypes.slice();
-                for (let i = 0; i < 6; i++) { // 6問に変更
-                    const correctCar = Phaser.Utils.Array.RemoveRandomElement(availableCars);
-                    const options = Phaser.Utils.Array.Shuffle([correctCar, ...Phaser.Utils.Array.Shuffle(availableCars).slice(0, 2)]);
-                    questions.push({ correctCar, options });
-                    this.usedCars.push(correctCar);
-                    availableCars = availableCars.filter(car => !this.usedCars.includes(car));
+                let availableItems = itemTypes.slice();
+                for (let i = 0; i < 6; i++) {
+                    const correctItem = Phaser.Utils.Array.RemoveRandomElement(availableItems);
+                    const options = Phaser.Utils.Array.Shuffle([correctItem, ...Phaser.Utils.Array.Shuffle(availableItems).slice(0, 2)]);
+                    questions.push({ correctItem, options });
+                    this.usedItems.push(correctItem);
+                    availableItems = availableItems.filter(item => !this.usedItems.includes(item));
                 }
                 return questions;
             }
 
             showQuestion() {
                 if (this.currentQuestion >= this.questions.length) {
-                    this.scene.start('ResultScene', { correctAnswers: this.correctAnswers, correctCars: this.correctCars });
+                    this.scene.start('ResultScene', { correctAnswers: this.correctAnswers, correctItems: this.correctItems });
                     return;
                 }
-                const { correctCar, options } = this.questions[this.currentQuestion];
+                const { correctItem, options } = this.questions[this.currentQuestion];
                 this.wrongAttempts = 0;
                 this.clearTimers();
                 this.stopAllSounds();
@@ -117,9 +117,9 @@
                     }
                 }));
                 this.timers.push(this.time.delayedCall(delayTime + 800, () => {
-                    this.sounds.correctCar = this.sound.add(correctCar);
-                    if (this.sounds.correctCar) {
-                        this.sounds.correctCar.play();
+                    this.sounds.correctItem = this.sound.add(correctItem);
+                    if (this.sounds.correctItem) {
+                        this.sounds.correctItem.play();
                         this.input.enabled = true;
                     }
                 }));
@@ -134,19 +134,19 @@
                 const positions = this.getUniquePositions(3, this.scale.width, this.scale.height);
 
                 this.currentImages = [];
-                options.forEach((car, index) => {
-                    const carImage = this.add.image(positions[index].x, positions[index].y, car)
+                options.forEach((item, index) => {
+                    const itemImage = this.add.image(positions[index].x, positions[index].y, item)
                         .setInteractive();
 
                     if (this.scale.width > this.scale.height) {
-                        carImage.setScale(Math.min(1, (this.scale.width / 3 - 40) / carImage.width));
+                        itemImage.setScale(Math.min(1, (this.scale.width / 3 - 40) / itemImage.width));
                     } else if (this.scale.width * 5 / 8 > this.scale.height / 3) {
-                        carImage.setScale(Math.min(1, ((this.scale.height / 3) - 40) / carImage.height));
+                        itemImage.setScale(Math.min(1, ((this.scale.height / 3) - 40) / itemImage.height));
                     } else {
-                        carImage.setScale(Math.min(1, ((this.scale.width) - 80) / carImage.width));
+                        itemImage.setScale(Math.min(1, ((this.scale.width) - 80) / itemImage.width));
                     }
 
-                    carImage.on('pointerdown', () => {
+                    itemImage.on('pointerdown', () => {
                         if (this.clickCooldown) return;
                         this.clickCooldown = true;
                         this.time.delayedCall(500, () => { this.clickCooldown = false; });
@@ -156,14 +156,14 @@
                         this.clearTimers();
                         this.stopAllSounds();
 
-                        if (car === correctCar) {
+                        if (item === correctItem) {
                             this.sounds.correct = this.sound.add('correct');
                             if (this.sounds.correct) {
                                 this.sounds.correct.play();
                             }
                             this.correctAnswers++;
                             this.currentQuestion++;
-                            this.correctCars.push(correctCar); // Store the correct car
+                            this.correctItems.push(correctItem); // Store the correct item
 
                             this.time.delayedCall(1000, () => {
                                 this.sounds.seikai = this.sound.add('seikai');
@@ -179,7 +179,7 @@
                             });
 
                             this.tweens.add({
-                                targets: carImage,
+                                targets: itemImage,
                                 x: this.scale.width / 2,
                                 y: this.scale.height / 2,
                                 duration: 1000,
@@ -187,7 +187,7 @@
                             });
 
                             this.currentImages.forEach(image => {
-                                if (image !== carImage) {
+                                if (image !== itemImage) {
                                     this.tweens.add({
                                         targets: image,
                                         alpha: 0,
@@ -269,9 +269,9 @@
                                 }                                
                             } else {
                                 this.time.delayedCall(2700, () => {
-                                    this.sounds.correctCar = this.sound.add(correctCar);
-                                    if (this.sounds.correctCar) {
-                                        this.sounds.correctCar.play();
+                                    this.sounds.correctItem = this.sound.add(correctItem);
+                                    if (this.sounds.correctItem) {
+                                        this.sounds.correctItem.play();
                                     }
                                 });
                                 this.time.delayedCall(4200, () => {
@@ -283,7 +283,7 @@
                             }
                         }
                     });
-                    this.currentImages.push(carImage);
+                    this.currentImages.push(itemImage);
                 });
             }
 
@@ -335,7 +335,7 @@
 
             init(data) {
                 this.correctAnswers = data.correctAnswers;
-                this.correctCars = data.correctCars;
+                this.correctItems = data.correctItems;
             }
 
             preload() {
@@ -388,23 +388,23 @@
                     this.scene.start('QuizScene');
                 });
 
-                // Display correct cars above and below the retry button
-                this.displayCorrectCars(buttonWidth);
+                // Display correct items above and below the retry button
+                this.displayCorrectItems(buttonWidth);
             }
 
-            displayCorrectCars(buttonWidth) {
-                const carSize = buttonWidth / 3; // クイズの画像の3分の1のサイズ
-                const startX = this.scale.width / 2 - carSize;
-                const carYAbove = this.scale.height / 4;
-                const carYBelow = this.scale.height * 3 / 4;
+            displayCorrectItems(buttonWidth) {
+                const itemSize = buttonWidth / 3; // クイズの画像の3分の1のサイズ
+                const startX = this.scale.width / 2 - itemSize;
+                const itemYAbove = this.scale.height / 4;
+                const itemYBelow = this.scale.height * 3 / 4;
 
-                for (let i = 0; i < this.correctCars.length; i++) {
-                    const carImage = this.add.image(startX + (i % 3) * carSize, i < 3 ? carYAbove : carYBelow, this.correctCars[i])
-                        .setDisplaySize(carSize, carSize * 5 / 8)
+                for (let i = 0; i < this.correctItems.length; i++) {
+                    const itemImage = this.add.image(startX + (i % 3) * itemSize, i < 3 ? itemYAbove : itemYBelow, this.correctItems[i])
+                        .setDisplaySize(itemSize, itemSize * 5 / 8)
                         .setAlpha(0);
 
                     this.tweens.add({
-                        targets: carImage,
+                        targets: itemImage,
                         alpha: 1,
                         duration: 1000,
                         delay: 100 * i
@@ -414,16 +414,16 @@
         }
 
         function preloadAssets(scene) {
-            carTypes.forEach(car => {
-                scene.load.image(car, `assets/${car}.png`);
+            itemTypes.forEach(item => {
+                scene.load.image(item, `assets/${item}.png`);
             });
             scene.load.audio('start', 'assets/voice-quiz-norimono.mp3');
             scene.load.audio('next', 'assets/voice-tsuginomondai.mp3');
             scene.load.audio('click', 'assets/chiroriro.mp3');
             scene.load.audio('quiz', 'assets/quiz-jajan.mp3');
             scene.load.audio('bgm', 'assets/Let’s_cooking.mp3');
-            carTypes.forEach(car => {
-                scene.load.audio(car, `assets/voice-${car}.mp3`);
+            itemTypes.forEach(item => {
+                scene.load.audio(item, `assets/voice-${item}.mp3`);
             });
             scene.load.audio('correct', 'assets/quiz-pinpon.mp3');
             scene.load.audio('seikai', 'assets/voice-seikai.mp3');
