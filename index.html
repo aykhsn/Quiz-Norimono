@@ -37,7 +37,7 @@
             create() {
                 const buttonWidth = Math.min(this.scale.width - 80, 400);
                 const startButton = this.add.image(this.scale.width / 2, this.scale.height / 2, 'button-start')
-                    .setDisplaySize(buttonWidth, buttonWidth / 2) // Adjust the height as needed
+                    .setDisplaySize(buttonWidth, buttonWidth / 2)
                     .setInteractive();
                 startButton.on('pointerdown', () => {
                     if (this.sound.context.state === 'suspended') {
@@ -61,7 +61,7 @@
                 this.wrongAttempts = 0;
                 this.timers = [];
                 this.sounds = {};
-                this.clickCooldown = false; // Cooldown flag for debouncing
+                this.clickCooldown = false;
             }
 
             init() {
@@ -97,11 +97,10 @@
                     return;
                 }
                 const { correctCar, options } = this.questions[this.currentQuestion];
-                this.wrongAttempts = 0; // Reset wrong attempts counter
+                this.wrongAttempts = 0;
                 this.clearTimers();
                 this.stopAllSounds();
 
-                // Disable all inputs
                 this.input.enabled = false;
 
                 let delayTime = 0;
@@ -119,7 +118,6 @@
                     this.sounds.correctCar = this.sound.add(correctCar);
                     if (this.sounds.correctCar) {
                         this.sounds.correctCar.play();
-                        // Enable inputs after the delay
                         this.input.enabled = true;
                     }
                 }));
@@ -138,7 +136,6 @@
                     const carImage = this.add.image(positions[index].x, positions[index].y, car)
                         .setInteractive();
 
-                    // 横長か縦長かに応じてスケールを設定
                     if (this.scale.width > this.scale.height) {
                         carImage.setScale(Math.min(1, (this.scale.width / 3 - 40) / carImage.width));
                     } else if (this.scale.width * 5 / 8 > this.scale.height / 3) {
@@ -148,11 +145,10 @@
                     }
 
                     carImage.on('pointerdown', () => {
-                        if (this.clickCooldown) return; // Ignore clicks during cooldown
+                        if (this.clickCooldown) return;
                         this.clickCooldown = true;
-                        this.time.delayedCall(500, () => { this.clickCooldown = false; }); // Reset cooldown after 500ms
+                        this.time.delayedCall(500, () => { this.clickCooldown = false; });
 
-                        // Disable all inputs
                         this.input.enabled = false;
 
                         this.clearTimers();
@@ -172,7 +168,6 @@
                                 }
                             });
 
-                            // 正解の車を中央に移動
                             this.tweens.add({
                                 targets: carImage,
                                 x: this.scale.width / 2,
@@ -181,7 +176,6 @@
                                 ease: 'Power2'
                             });
 
-                            // その他の車をフェードアウト
                             this.currentImages.forEach(image => {
                                 if (image !== carImage) {
                                     this.tweens.add({
@@ -196,10 +190,9 @@
                                 }
                             });
 
-                            // 白色の円を表示
                             const circle = this.add.circle(this.scale.width / 2, this.scale.height / 2, 0, 0xffffff)
                                 .setAlpha(0.5)
-                                .setDepth(-1); // 背景として表示
+                                .setDepth(-1);
                             this.tweens.add({
                                 targets: circle,
                                 radius: Math.min(this.scale.width, this.scale.height) / 2.2,
@@ -228,39 +221,55 @@
                                     this.input.enabled = true;
                                 });
                             }
-
-
                         } else {
                             this.wrongAttempts++;
+
+                            this.sounds.tryAgain = this.sound.add('try_again');
+                            if (this.sounds.tryAgain) {
+                                this.sounds.tryAgain.play();
+                            }
+
+                            this.sounds.chigauyo = this.sound.add('chigauyo');
+                            this.time.delayedCall(1000, () => {
+                                if (this.sounds.chigauyo) {
+                                    this.sounds.chigauyo.play();
+                                }
+                            });
+
                             if (this.wrongAttempts >= 3) {
                                 this.currentQuestion++;
-                                this.clearOptions();
-                                this.showQuestion();
-                                this.input.enabled = true;
-                            } else {
-                                this.sounds.tryAgain = this.sound.add('try_again');
-                                if (this.sounds.tryAgain) {
-                                    this.sounds.tryAgain.play();
-                                }
 
-                                this.sounds.chigauyo = this.sound.add('chigauyo');
-                                this.time.delayedCall(1000, () => {
-                                    if (this.sounds.chigauyo) {
-                                        this.sounds.chigauyo.play();
-                                    }
-                                });
+                                if (this.currentQuestion < this.questions.length) {
+                                    this.time.delayedCall(3000, () => {
+                                        this.sounds.next = this.sound.add('next');
+                                        if (this.sounds.next) {
+                                            this.sounds.next.play();
+                                        }
+                                    });
+                                    this.time.delayedCall(4400, () => {
+                                        this.clearOptions();
+                                        this.showQuestion();
+                                        this.input.enabled = true;
+                                    });
+                                } else {
+                                    this.time.delayedCall(3000, () => {
+                                        this.clearOptions();
+                                        this.showQuestion();
+                                        this.input.enabled = true;
+                                    });
+                                }                                
+                            } else {
                                 this.time.delayedCall(2700, () => {
                                     this.sounds.correctCar = this.sound.add(correctCar);
                                     if (this.sounds.correctCar) {
                                         this.sounds.correctCar.play();
-                                        // Enable inputs after the delay
-                                        this.input.enabled = true;
                                     }
                                 });
                                 this.time.delayedCall(4200, () => {
                                     if (this.sounds.bgmSound) {
                                         this.sounds.bgmSound.play();
                                     }
+                                    this.input.enabled = true;
                                 });
                             }
                         }
@@ -285,7 +294,6 @@
                         this.sounds[key].stop();
                     }
                 }
-                // 確実にbgmSoundも停止させる
                 if (this.sounds.bgmSound && this.sounds.bgmSound.isPlaying) {
                     this.sounds.bgmSound.stop();
                 }
@@ -295,14 +303,12 @@
                 const positions = [];
                 const padding = 40;
                 if (width > height) {
-                    // 横長の場合は横に三等分
                     const stepX = (width - 2 * padding) / 3;
                     const y = height / 2;
                     for (let i = 0; i < count; i++) {
                         positions.push({ x: padding + stepX / 2 + i * stepX, y: y });
                     }
                 } else {
-                    // 縦長の場合は縦に三等分
                     const stepY = (height - 2 * padding) / 3;
                     const x = width / 2;
                     for (let i = 0; i < count; i++) {
@@ -334,7 +340,7 @@
                 });
 
                 const retryButton = this.add.image(this.scale.width / 2, this.scale.height / 2, 'button-retry')
-                    .setDisplaySize(buttonWidth, buttonWidth / 2) // Adjust the height as needed
+                    .setDisplaySize(buttonWidth, buttonWidth / 2)
                     .setInteractive();
                 retryButton.on('pointerdown', () => {
                     this.sound.play('retry');
