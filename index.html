@@ -330,13 +330,32 @@
 
             preload() {
                 this.load.image('button-retry', 'assets/button-retry.png');
+                this.load.audio('tettere', 'assets/tettere.mp3');
+                this.load.audio('voice-seikaishitane-0', 'assets/voice-seikaishitane-0.mp3');
+                this.load.audio('voice-seikaishitane-1', 'assets/voice-seikaishitane-1.mp3');
+                this.load.audio('voice-seikaishitane-2', 'assets/voice-seikaishitane-2.mp3');
+                this.load.audio('voice-seikaishitane-3', 'assets/voice-seikaishitane-3.mp3');
+                this.load.audio('voice-seikaishitane-4', 'assets/voice-seikaishitane-4.mp3');
+                this.load.audio('voice-seikaishitane-all', 'assets/voice-seikaishitane-all.mp3');
             }
 
             create() {
                 const buttonWidth = Math.min(this.scale.width - 80, 400);
-                this.sound.play('result');
-                this.time.delayedCall(1000, () => {
-                    this.sound.play('great');
+
+                const voiceFiles = [
+                    'voice-seikaishitane-0',
+                    'voice-seikaishitane-1',
+                    'voice-seikaishitane-2',
+                    'voice-seikaishitane-3',
+                    'voice-seikaishitane-4',
+                    'voice-seikaishitane-all'
+                ];
+
+                this.sound.play('tettere');
+
+                const voiceFile = this.correctAnswers >= 5 ? voiceFiles[5] : voiceFiles[this.correctAnswers];
+                this.time.delayedCall(2000, () => {
+                    this.sound.play(voiceFile);
                 });
 
                 const retryButton = this.add.image(this.scale.width / 2, this.scale.height / 2, 'button-retry')
@@ -347,6 +366,7 @@
                     if (this.sound.context.state === 'suspended') {
                         this.sound.context.resume();
                     }
+                    this.sound.play('click');
                     this.scene.start('QuizScene');
                 });
             }
