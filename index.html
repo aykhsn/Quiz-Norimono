@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
+    <script src="homeButton.js"></script>
     <style>
         body {
             margin: 0;
@@ -31,6 +32,11 @@
 
             preload() {
                 this.load.image('button-start', 'assets/button-start.png');
+                this.load.image('home-button', 'assets/home-button.png');
+                this.load.image('modal-text', 'assets/modal-text.png');
+                this.load.image('home-yes', 'assets/button-yes.png');
+                this.load.image('home-no', 'assets/button-no.png');
+                this.load.image('modal-close', 'assets/modal-close.png');
                 preloadAssets(this);
             }
 
@@ -49,6 +55,8 @@
                         this.scene.start('QuizScene');
                     });
                 });
+
+                new HomeButton(this); // HomeButtonを作成
             }
         }
 
@@ -78,6 +86,8 @@
             create() {
                 this.questions = this.createQuestions();
                 this.showQuestion();
+
+                new HomeButton(this); // HomeButtonを作成
             }
 
             createQuestions() {
@@ -390,6 +400,8 @@
 
                 // Display correct items above and below the retry button
                 this.displayCorrectItems(buttonWidth);
+
+                new HomeButton(this); // HomeButtonを作成
             }
 
             displayCorrectItems(buttonWidth) {
@@ -415,13 +427,13 @@
 
         function preloadAssets(scene) {
             itemTypes.forEach(item => {
-                scene.load.image(item, `assets/${item}.png`);
+                scene.load.image(item, `assets/${item}-5_8.png`);
             });
             scene.load.audio('start', 'assets/voice-quiz-norimono.mp3');
             scene.load.audio('next', 'assets/voice-tsuginomondai.mp3');
             scene.load.audio('click', 'assets/chiroriro.mp3');
             scene.load.audio('quiz', 'assets/quiz-jajan.mp3');
-            scene.load.audio('bgm', 'assets/Let’s_cooking.mp3');
+            scene.load.audio('bgm', 'assets/lets_cooking.mp3');
             itemTypes.forEach(item => {
                 scene.load.audio(item, `assets/voice-${item}.mp3`);
             });
