@@ -1,5 +1,3 @@
-// homeButton.js
-
 class HomeButton {
     constructor(scene) {
         this.scene = scene;
