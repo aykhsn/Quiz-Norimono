@@ -8,7 +8,7 @@ class HomeButton {
     createHomeButton() {
         this.homeButton = this.scene.add.image(5, 5, 'home-button') // Use the image as the button
             .setOrigin(0, 0) // Align the image to the top-left corner
-            .setScale(0.24) // Scale the image as needed
+            .setScale(0.2) // Scale the image as needed
             .setInteractive() // Make the image interactive
             .on('pointerdown', () => {
                 this.showModal();
